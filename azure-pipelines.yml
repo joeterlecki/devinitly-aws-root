@@ -33,9 +33,9 @@ stages:
             name: terraform_config_evaluation
 
           - script: |
-              pwd
-              ls
-              echo $(Build.SourcesDirectory)
+              sudo mkdir /artifacts
+              chmod 755 /artifacts
+              ls -lh /
 #
 #          - script: |
 #              build_path=$(pwd)
