@@ -30,20 +30,7 @@ stages:
                 fi
               done
             displayName: Evaluating Commit for Terragrunt Configuration Changes
-            name: terraform_config_evaluation
 
-          - script: |
-              sudo mkdir /artifacts
-              chmod 755 /artifacts
-              ls -lh /
-#
-#          - script: |
-#              build_path=$(pwd)
-#              echo "##vso[task.setvariable variable=build_path]$build_path"
-#              mkdir -p ./ArtifactPublishLocation
-#            displayName: Ensure Artifact DIR exists
-#            condition: eq(variables['tf_config_validated'], '2')
-#
 #          - task: TerraformInstaller@0
 #            displayName: Use latest Terraform
 #            inputs:
@@ -59,22 +46,21 @@ stages:
 #              sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
 #            displayName: Ensuring Terragrunt Permissions
 #            condition: eq(variables['tf_config_validated'], '2')
-#
-#          - script: |
-#              echo $(build_path)
-#              cd $TF_PATH
+
+          - script: |
+              cd $TF_PATH
+              echo $TF_PATH
 #              terragrunt plan -out=terraform.plan -input=false
 #              tf_plan_path=$(find . -name terraform.plan -printf '%h\n')
 #              echo "terraform.plan file located: ${tf_plan_path}/terraform.plan"
 #              echo "##vso[task.setvariable variable=tf_plan_path;isOutput=true]$tf_plan_path"
-#              # mv -f "${tf_plan_path}/terraform.plan" /home/vsts/work/1/s/ArtifactPublishLocation/
-#              # ls /home/vsts/work/1/s/ArtifactPublishLocation
 #              echo "##vso[task.setvariable variable=tf_plan_generated]2"
 #              terragrunt apply -auto-approve
-#            displayName: Initialize Terraform\Terragrunt
-#            env:
-#              AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-#              AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-#              TERRAGRUNT_IAM_ROLE: $(TERRAGRUNT_IAM_ROLE)
-#              TERRAFORM_STATE_BUCKET: $(TERRAFORM_STATE_BUCKET)
+            workingDirectory: '$(Build.SourcesDirectory)'
+            displayName: Initialize Terraform\Terragrunt
+            env:
+              AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+              AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+              TERRAGRUNT_IAM_ROLE: $(TERRAGRUNT_IAM_ROLE)
+              TERRAFORM_STATE_BUCKET: $(TERRAFORM_STATE_BUCKET)
 #            condition: eq(variables['tf_config_validated'], '2')
