@@ -12,3 +12,4 @@ inputs = {
   environment       = "prd"
   tags              = {Project = "portfolio", Department = "Cloud Engineering"}
 }
+
