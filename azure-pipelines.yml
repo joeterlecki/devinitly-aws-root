@@ -11,7 +11,7 @@ stages:
         continueOnError: false
         pool:
           vmImage: ubuntu-latest
-        container: ubuntu:latest
+#        container: ubuntu:latest
         steps:
           - script: |
               files=$(git diff-tree --no-commit-id --name-only -r $(Build.SourceVersion))
@@ -20,16 +20,13 @@ stages:
                 parsed_file=${file##*/}
                 if [[ "$parsed_file" =~ .(tf|tfvars|hcl)$ ]]; then
                   parsed_path=${file%/*}
-                  echo "Terragrunt configuration file changes found"
-                  echo $parsed_path
+                  echo "Terragrunt configuration file changes found: ${parsed_path}"
                   echo "##vso[task.setvariable variable=tf_path]$parsed_path"
                   echo "##vso[task.setvariable variable=tf_config_validated]2"
-                  echo "##vso[task.setvariable variable=tf_config_validated_out;isOutput=true]2"
                 else
                   echo "##vso[task.setvariable variable=tf_path]$parsed_path"
                   echo "No Terragrunt configuration file changes found"
                   echo "##vso[task.setvariable variable=tf_config_validated]1"
-                  echo "##vso[task.setvariable variable=tf_config_validated_out;isOutput=true]1"
                 fi
               done
             displayName: Validating Commit for Terragrunt Configuration Changes
