@@ -35,6 +35,7 @@ stages:
           - script: |
               pwd
               ls
+              echo $(Build.SourcesDirectory)
 #
 #          - script: |
 #              build_path=$(pwd)
