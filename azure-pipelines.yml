@@ -96,17 +96,13 @@ stages:
             steps:
               - script: |
                   base=$(basename $PWD)
-                  pwd
-                  ls -lh
-                  cd ..
-                  ls -lh
-                  cd terraform-plan-artifact
-                  ls
-                displayName: Checking Current Dir for debugging
-
-              - script: |
-                  base=$(basename $PWD)
                   cd ../terraform-plan-artifact
                   tar -xvf $base.tar.gz
                   ls -lh
                 displayName: Decomressing Terraform Plan Artifact
+
+              - script: |
+                  pwd
+                  echo "Finding Current Terragrunt build Directory"
+                  terragrunt_cache_path=$(find . -name .terragrunt-cache/ -printf '%h\n')
+                  echo $terragrunt_cache_path
