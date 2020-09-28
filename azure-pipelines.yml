@@ -84,3 +84,12 @@ stages:
               artifactName: terraform-plan-artifact
               targetPath: '../artifact-directory'
             condition: eq(variables['tf_plan_generated'], '2')
+
+  - stage: Deliver
+    dependsOn: Build
+    jobs:
+    - deployment: Terraform_Apply
+      displayName: Applying Terraform Configuration
+      pool:
+        vmImage: ubuntu-latest
+      environment: 'Terraform-Apply'
