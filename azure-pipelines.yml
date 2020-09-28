@@ -101,8 +101,34 @@ stages:
                   ls -lh
                 displayName: Decomressing Terraform Plan Artifact
 
+              - task: TerraformInstaller@0
+                displayName: Use latest Terraform
+                inputs:
+                  terraformVersion: latest
+    
+              - script: wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.24.0/terragrunt_linux_amd64
+                displayName: Retrieving Terragrunt
+    
+              - script: |
+                  chmod +x terragrunt_linux_amd64
+                  sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
+                displayName: Ensuring Terragrunt Permissions
+
               - script: |
                   cd ../terraform-plan-artifact
                   echo "Finding Current Terragrunt build Directory"
                   terragrunt_cache_path=$(find . -name .terragrunt-cache -printf '%h\n')
                   echo $terragrunt_cache_path
+                  echo "##vso[task.setvariable variable=terragrunt_cache_path]$terragrunt_cache_path"
+                displayName: Locate Configuration Path via terragrunt.cache directory
+
+              - script: |
+                  echo 'Applying Terragrunt Plan File...'
+                  terragrunt apply -auto-approve
+                workingDirectory: '../terraform-plan-artifact/$(TERRAGRUNT_CACHE_PATH)'
+                displayName: Apply Terraform Configurtion Changes
+                env:
+                  AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+                  AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+                  TERRAGRUNT_IAM_ROLE: $(TERRAGRUNT_IAM_ROLE)
+                  TERRAFORM_STATE_BUCKET: $(TERRAFORM_STATE_BUCKET)
