@@ -54,6 +54,7 @@ stages:
           - script: |
               terragrunt plan -out=terraform.plan -input=false
               tf_plan_path=$(find . -name terraform.plan -printf '%h\n')
+              echo $tf_plan_path
               echo "terraform.plan file located: ${tf_plan_path}/terraform.plan"
               echo "##vso[task.setvariable variable=tf_plan_path;isOutput=true]$tf_plan_path"
               echo "##vso[task.setvariable variable=tf_plan_generated]2"
