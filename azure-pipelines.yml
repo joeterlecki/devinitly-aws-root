@@ -51,7 +51,6 @@ stages:
             displayName: Ensuring Terragrunt Permissions
             condition: eq(variables['tf_config_validated'], '2')
 
-
           - script: |
               terragrunt plan -out=terraform.plan -input=false
               tf_plan_path=$(find . -name terraform.plan -printf '%h\n')
@@ -59,8 +58,6 @@ stages:
               echo "##vso[task.setvariable variable=tf_plan_path;isOutput=true]$tf_plan_path"
               echo "##vso[task.setvariable variable=tf_plan_generated]2"
               # terragrunt apply -auto-approve
-              pwd
-              ls -lh
             workingDirectory: '$(Build.SourcesDirectory)/$(TF_PATH)'
             displayName: Initialize Terraform\Terragrunt
             env:
@@ -99,5 +96,8 @@ stages:
               - script: |
                   base=$(basename $PWD)
                   pwd
+                  ls -lh
                   cd ..
                   ls -lh
+                  cd terraform-plan-artifact
+                  ls
