@@ -72,7 +72,6 @@ stages:
 
           - script: |
               base=$(basename $PWD)
-              echo $base
               cd ..
               tar -czf $base.tar.gz $base --exclude='/.git'
               mv $base.tar.gz artifact-directory/
@@ -93,3 +92,12 @@ stages:
       pool:
         vmImage: ubuntu-latest
       environment: 'Terraform-Apply-Manual'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - script: |
+                  base=$(basename $PWD)
+                  pwd
+                  cd ..
+                  ls -lh
