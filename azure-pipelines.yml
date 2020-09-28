@@ -4,7 +4,7 @@ trigger:
   - develop
 
 stages:
-  - stage: Build
+  - stage: TerraformPlan
     jobs:
       - job: Terraform_Plan
         displayName: Terraform Plan
@@ -85,11 +85,11 @@ stages:
               targetPath: '../artifact-directory'
             condition: eq(variables['tf_plan_generated'], '2')
 
-  - stage: Deliver
-    dependsOn: Build
+  - stage: TerraformApply
+    dependsOn: TerraformPlan
     jobs:
     - deployment: Terraform_Apply
       displayName: Applying Terraform Configuration
       pool:
         vmImage: ubuntu-latest
-      environment: 'Terraform-Apply'
+      environment: 'Terraform-Apply-Manual'
