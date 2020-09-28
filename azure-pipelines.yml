@@ -13,64 +13,65 @@ stages:
           vmImage: ubuntu-latest
         steps:
           - script: |
-              base=$(basename $PWD)
               cd ..
-              tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
+              mkdir ArtifactDirectory    
+            displayName: Making Artifact Directory 
+
+          - script: |
+              files=$(git diff-tree --no-commit-id --name-only -r $(Build.SourceVersion))
+              for file in $files
+              do
+                parsed_file=${file##*/}
+                if [[ "$parsed_file" =~ .(tf|tfvars|hcl)$ ]]; then
+                  parsed_path=${file%/*}
+                  echo "Terragrunt configuration file changes found: ${parsed_path}"
+                  echo "##vso[task.setvariable variable=tf_path]$parsed_path"
+                  echo "##vso[task.setvariable variable=tf_config_validated]2"
+                else
+                  echo "##vso[task.setvariable variable=tf_path]$parsed_path"
+                  echo "No Terragrunt configuration file changes found"
+                  echo "##vso[task.setvariable variable=tf_config_validated]1"
+                fi
+              done
+            displayName: Evaluating Commit for Terragrunt Configuration Changes
+
+          - task: TerraformInstaller@0
+            displayName: Use latest Terraform
+            inputs:
+              terraformVersion: latest
+            condition: eq(variables['tf_config_validated'], '2')
+
+          - script: wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.24.0/terragrunt_linux_amd64
+            displayName: Retrieving Terragrunt
+            condition: eq(variables['tf_config_validated'], '2')
+
+          - script: |
+              chmod +x terragrunt_linux_amd64
+              sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
+            displayName: Ensuring Terragrunt Permissions
+            condition: eq(variables['tf_config_validated'], '2')
+
+
+          - script: |
+              terragrunt plan -out=terraform.plan -input=false
+              tf_plan_path=$(find . -name terraform.plan -printf '%h\n')
+              echo "terraform.plan file located: ${tf_plan_path}/terraform.plan"
+              echo "##vso[task.setvariable variable=tf_plan_path;isOutput=true]$tf_plan_path"
+              echo "##vso[task.setvariable variable=tf_plan_generated]2"
+              # terragrunt apply -auto-approve
               pwd
-              ls -la
-              cd $base
-              pwd
-              ls -la
-            displayName: Compressing Terraform Configuration files
-          
+              ls -lh
+            workingDirectory: '$(Build.SourcesDirectory)/$(TF_PATH)'
+            displayName: Initialize Terraform\Terragrunt
+            env:
+              AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+              AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+              TERRAGRUNT_IAM_ROLE: $(TERRAGRUNT_IAM_ROLE)
+              TERRAFORM_STATE_BUCKET: $(TERRAFORM_STATE_BUCKET)
+            condition: eq(variables['tf_config_validated'], '2')
 
           # - script: |
-          #     files=$(git diff-tree --no-commit-id --name-only -r $(Build.SourceVersion))
-          #     for file in $files
-          #     do
-          #       parsed_file=${file##*/}
-          #       if [[ "$parsed_file" =~ .(tf|tfvars|hcl)$ ]]; then
-          #         parsed_path=${file%/*}
-          #         echo "Terragrunt configuration file changes found: ${parsed_path}"
-          #         echo "##vso[task.setvariable variable=tf_path]$parsed_path"
-          #         echo "##vso[task.setvariable variable=tf_config_validated]2"
-          #       else
-          #         echo "##vso[task.setvariable variable=tf_path]$parsed_path"
-          #         echo "No Terragrunt configuration file changes found"
-          #         echo "##vso[task.setvariable variable=tf_config_validated]1"
-          #       fi
-          #     done
-          #   displayName: Evaluating Commit for Terragrunt Configuration Changes
-
-          # - task: TerraformInstaller@0
-          #   displayName: Use latest Terraform
-          #   inputs:
-          #     terraformVersion: latest
-          #   condition: eq(variables['tf_config_validated'], '2')
-
-          # - script: wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.24.0/terragrunt_linux_amd64
-          #   displayName: Retrieving Terragrunt
-          #   condition: eq(variables['tf_config_validated'], '2')
-
-          # - script: |
-          #     chmod +x terragrunt_linux_amd64
-          #     sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
-          #   displayName: Ensuring Terragrunt Permissions
-          #   condition: eq(variables['tf_config_validated'], '2')
-
-
-          # - script: |
-          #     terragrunt plan -out=terraform.plan -input=false
-          #     tf_plan_path=$(find . -name terraform.plan -printf '%h\n')
-          #     echo "terraform.plan file located: ${tf_plan_path}/terraform.plan"
-          #     echo "##vso[task.setvariable variable=tf_plan_path;isOutput=true]$tf_plan_path"
-          #     echo "##vso[task.setvariable variable=tf_plan_generated]2"
-          #     terragrunt apply -auto-approve
-          #   workingDirectory: '$(Build.SourcesDirectory)/$(TF_PATH)'
-          #   displayName: Initialize Terraform\Terragrunt
-          #   env:
-          #     AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-          #     AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-          #     TERRAGRUNT_IAM_ROLE: $(TERRAGRUNT_IAM_ROLE)
-          #     TERRAFORM_STATE_BUCKET: $(TERRAFORM_STATE_BUCKET)
-          #   condition: eq(variables['tf_config_validated'], '2')
+          #     base=$(basename $PWD)
+          #     cd ..
+          #     tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
+          #   displayName: Compressing Terraform Configuration files
