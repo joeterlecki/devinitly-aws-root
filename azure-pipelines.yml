@@ -72,14 +72,15 @@ stages:
 
           - script: |
               base=$(basename $PWD)
-              cd ..
-              tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
-              mv terra-artifact.tar.gz ./artifact-directory
+              echo '${base}'
+              # cd ..
+              # tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
+              # mv terra-artifact.tar.gz ./artifact-directory
             displayName: Compressing Terraform Configuration files
             condition: eq(variables['tf_plan_generated'], '2')
 
-          - task: PublishPipelineArtifact@0
-            inputs:
-              artifactName: terraform-plan-artifact
-              targetPath: '../artifact-directory'
-            condition: eq(variables['tf_plan_generated'], '2')
+          # - task: PublishPipelineArtifact@0
+          #   inputs:
+          #     artifactName: terraform-plan-artifact
+          #     targetPath: '../artifact-directory'
+          #   condition: eq(variables['tf_plan_generated'], '2')
