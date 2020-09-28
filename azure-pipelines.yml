@@ -71,7 +71,7 @@ stages:
           - script: |
               base=$(basename $PWD)
               cd ..
-              tar -czf $base.tar.gz $base --exclude='/.git'
+              tar -czf $base.tar.gz $base
               mv $base.tar.gz artifact-directory/
             displayName: Compressing Terraform Configuration files
             condition: eq(variables['tf_plan_generated'], '2')
@@ -102,3 +102,11 @@ stages:
                   ls -lh
                   cd terraform-plan-artifact
                   ls
+                displayName: Checking Current Dir for debugging
+
+              - script: |
+                  base=$(basename $PWD)
+                  cd ../terraform-plan-artifact
+                  tar -xvf $base.tar.gz
+                  ls -lh
+                displayName: Decomressing Terraform Plan Artifact
