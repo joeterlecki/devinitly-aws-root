@@ -73,7 +73,7 @@ stages:
           - script: |
               base=$(basename $PWD)
               echo $base
-              # cd ..
+              cd ..
               tar -czf $base.tar.gz $base --exclude='/.git'
               mv $base.tar.gz artifact-directory/
             displayName: Compressing Terraform Configuration files
