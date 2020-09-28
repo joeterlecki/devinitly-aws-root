@@ -70,8 +70,12 @@ stages:
               TERRAFORM_STATE_BUCKET: $(TERRAFORM_STATE_BUCKET)
             condition: eq(variables['tf_config_validated'], '2')
 
-          # - script: |
-          #     base=$(basename $PWD)
-          #     cd ..
-          #     tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
-          #   displayName: Compressing Terraform Configuration files
+          - script: |
+              pwd
+              ls -lh
+              base=$(basename $PWD)
+              cd ..
+              tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
+              pwd
+              ls -lh
+            displayName: Compressing Terraform Configuration files
