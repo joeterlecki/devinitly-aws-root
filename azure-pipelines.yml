@@ -15,7 +15,7 @@ stages:
           - script: |
               base=$(basename $PWD)
               cd ..
-              tar -czf terra-artifact.tar.gz -C $base * --exclude='./.git'
+              tar -czf terra-artifact.tar.gz $base * --exclude='./.git'
               pwd
               ls -la
               cd $base
