@@ -72,7 +72,7 @@ stages:
               base=$(basename $PWD)
               cd ..
               tar -czf $base.tar.gz $base
-              mv $base.tar.gz artifact-directory/
+              mv -f $base.tar.gz artifact-directory/
             displayName: Compressing Terraform Configuration files
             condition: eq(variables['tf_plan_generated'], '2')
 
