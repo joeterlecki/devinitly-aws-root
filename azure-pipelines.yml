@@ -18,6 +18,9 @@ stages:
               tar -czf terra-artifact.tar.gz $base
               pwd
               ls
+              cd $base
+              pwd
+              ls
             displayName: Compressing Terraform Configuration files
           
 
