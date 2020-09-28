@@ -72,7 +72,7 @@ stages:
 
           - script: |
               base=$(basename $PWD)
-              echo '${base}'
+              echo $base
               # cd ..
               # tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
               # mv terra-artifact.tar.gz ./artifact-directory
