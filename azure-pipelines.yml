@@ -102,9 +102,7 @@ stages:
                 displayName: Decomressing Terraform Plan Artifact
 
               - script: |
-                  pwd
-                  ls -lh
-                  cd ..
+                  cd ../terraform-plan-artifact
                   echo "Finding Current Terragrunt build Directory"
-                  terragrunt_cache_path=$(find . -name .terragrunt-cache/ -printf '%h\n')
+                  terragrunt_cache_path=$(find . -name .terragrunt-cache -printf '%h\n')
                   echo $terragrunt_cache_path
