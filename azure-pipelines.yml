@@ -103,6 +103,8 @@ stages:
 
               - script: |
                   pwd
+                  ls -lh
+                  cd ..
                   echo "Finding Current Terragrunt build Directory"
                   terragrunt_cache_path=$(find . -name .terragrunt-cache/ -printf '%h\n')
                   echo $terragrunt_cache_path
