@@ -14,7 +14,7 @@ stages:
         steps:
           - script: |
               cd ..
-              mkdir ArtifactDirectory    
+              mkdir artifact-directory    
             displayName: Making Artifact Directory 
 
           - script: |
@@ -71,11 +71,15 @@ stages:
             condition: eq(variables['tf_config_validated'], '2')
 
           - script: |
-              pwd
-              ls -lh
               base=$(basename $PWD)
               cd ..
               tar -czf terra-artifact.tar.gz $base * --exclude='/.git'
-              pwd
-              ls -lh
+              mv terra-artifact.tar.gz ./artifact-directory
             displayName: Compressing Terraform Configuration files
+            condition: eq(variables['tf_plan_generated'], '2')
+
+          - task: PublishPipelineArtifact@0
+            inputs:
+              artifactName: terraform-plan-artifact
+              targetPath: '../artifact-directory'
+            condition: eq(variables['tf_plan_generated'], '2')
