@@ -11,5 +11,5 @@ inputs = {
   versioning_status = "false"
   environment       = "prd"
   canned_acl        = "log-delivery-write"
-  tags              = {Project = "portfolio", Department = "Cloud Engineering"}
+  tags              = {Project = "portfolio", Department = "Cloud Engineering", Testing = "Demo test"}
 }
