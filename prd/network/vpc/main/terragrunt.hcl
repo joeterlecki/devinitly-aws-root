@@ -1,5 +1,5 @@
 terraform {
-  source = "github.com/joeterlecki/terraform-aws-vpc-standard.git?ref=v1.3.3"
+  source = "github.com/joeterlecki/terraform-aws-vpc-standard.git?ref=v1.3.4"
 }
 
 include {
