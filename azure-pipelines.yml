@@ -4,7 +4,7 @@ trigger:
   - master
 
 stages:
-  - stage: Build
+  - stage: TerraformPlan
     jobs:
       - job: Terraform_Plan
         displayName: Terraform Plan
@@ -13,33 +13,25 @@ stages:
           vmImage: ubuntu-latest
         steps:
           - script: |
+              cd ..
+              mkdir artifact-directory    
+            displayName: Making Artifact Directory 
+
+          - script: |
               files=$(git diff-tree --no-commit-id --name-only -r $(Build.SourceVersion))
               for file in $files
               do
                 parsed_file=${file##*/}
                 if [[ "$parsed_file" =~ .(tf|tfvars|hcl)$ ]]; then
                   parsed_path=${file%/*}
-                  echo "Terragrunt configuration file changes found"
-                  echo $parsed_path
+                  echo "Terraform configuration file changes found: ${parsed_path}"
                   echo "##vso[task.setvariable variable=tf_path]$parsed_path"
                   echo "##vso[task.setvariable variable=tf_config_validated]2"
-                  echo "##vso[task.setvariable variable=tf_config_validated_out;isOutput=true]2"
                 else
-                  echo "##vso[task.setvariable variable=tf_path]$parsed_path"
-                  echo "No Terragrunt configuration file changes found"
-                  echo "##vso[task.setvariable variable=tf_config_validated]1"
-                  echo "##vso[task.setvariable variable=tf_config_validated_out;isOutput=true]1"
+                  echo "No Terraform configuration file changes found"
                 fi
               done
-            displayName: Validating Commit for Terragrunt Configuration Changes
-            name: terraform_config_validation
-
-          - script: |
-              build_path=$(pwd)
-              echo "##vso[task.setvariable variable=build_path]$build_path"
-              mkdir -p ./ArtifactPublishLocation
-            displayName: Ensure Artifact DIR exists
-            condition: eq(variables['tf_config_validated'], '2')
+            displayName: Evaluating Commit for Terraform Configuration Changes
 
           - task: TerraformInstaller@0
             displayName: Use latest Terraform
@@ -47,98 +39,68 @@ stages:
               terraformVersion: latest
             condition: eq(variables['tf_config_validated'], '2')
 
-          - script: wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.24.0/terragrunt_linux_amd64
-            displayName: Retrieving Terragrunt
-            condition: eq(variables['tf_config_validated'], '2')
-
           - script: |
-              chmod +x terragrunt_linux_amd64
-              sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
-            displayName: Ensuring Terragrunt Permissions
-            condition: eq(variables['tf_config_validated'], '2')
-
-          - script: |
-              echo $(build_path)
-              cd $TF_PATH
-              terragrunt plan -out=terraform.plan -input=false
+              terraform init
+              terraform plan -out=terraform.plan -input=false
               tf_plan_path=$(find . -name terraform.plan -printf '%h\n')
+              echo $tf_plan_path
               echo "terraform.plan file located: ${tf_plan_path}/terraform.plan"
               echo "##vso[task.setvariable variable=tf_plan_path;isOutput=true]$tf_plan_path"
-              # mv -f "${tf_plan_path}/terraform.plan" /home/vsts/work/1/s/ArtifactPublishLocation/
-              # ls /home/vsts/work/1/s/ArtifactPublishLocation
               echo "##vso[task.setvariable variable=tf_plan_generated]2"
-              terragrunt apply -auto-approve
+            workingDirectory: '$(Build.SourcesDirectory)/$(TF_PATH)'
             displayName: Initialize Terraform\Terragrunt
             env:
               AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
               AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-              TERRAGRUNT_IAM_ROLE: $(TERRAGRUNT_IAM_ROLE)
-              TERRAFORM_STATE_BUCKET: $(TERRAFORM_STATE_BUCKET)
             condition: eq(variables['tf_config_validated'], '2')
 
-          # - script: |
-          #     echo "Compressing Terraform files"
-          #     tar -czf terragrunt-files.tar.gz -C ./
-          #     mv terragrunt-files.tar.gz /home/vsts/work/1/s/ArtifactPublishLocation/
-          #     ls /home/vsts/work/1/s/ArtifactPublishLocation
-          #   condition: eq(variables['tf_config_validated'], '2')
+          - script: |
+              base=$(basename $PWD)
+              cd ..
+              tar -czf $base.tar.gz $base
+              mv -f $base.tar.gz artifact-directory/
+            displayName: Compressing Terraform Configuration files
+            condition: eq(variables['tf_plan_generated'], '2')
 
-          # - task: PublishPipelineArtifact@0
-          #   inputs:
-          #     artifactName: terraformPlanFile
-          #     targetPath: /home/vsts/work/1/s/ArtifactPublishLocation
-          #   condition: eq(variables['tf_plan_generated'], '2')
+          - task: PublishPipelineArtifact@0
+            inputs:
+              artifactName: terraform-plan-artifact
+              targetPath: '../artifact-directory'
+            condition: eq(variables['tf_plan_generated'], '2')
 
-  # - stage: Deploy
-  #   dependsOn: Build
-  #   variables:
-  #     tf_config_validated: $[ stageDependencies.Build.Terraform_Plan.outputs['terraform_config_validation.tf_config_validated_out'] ]
-  #   jobs:
-  #     - deployment: Terraform_Apply
-  #       displayName: Terraform Apply
-  #       pool:
-  #         vmImage: ubuntu-latest
-  #       environment: production
-  #       strategy:
-  #         runOnce:
-  #           deploy:
-  #             steps:
-  #               - task: DownloadPipelineArtifact@1
-  #                 inputs:
-  #                   buildType: current
-  #                   buildVersionToDownload: latest
-  #                   artifactName: terraformPlanFile
-  #                   downloadPath: "$(System.ArtifactsDirectory)"
-  #                 displayName: Retriving Artifacts
-  #                 condition: eq(variables['tf_config_validated'], '2')
+  - stage: TerraformApply
+    dependsOn: TerraformPlan
+    jobs:
+    - deployment: Terraform_Apply
+      displayName: Applying Terraform Configuration
+      pool:
+        vmImage: ubuntu-latest
+      environment: 'Terraform-Apply-Manual'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - script: |
+                  base=$(basename $PWD)
+                  cd ../terraform-plan-artifact
+                  tar -xvf $base.tar.gz
+                  ls -lh
+                displayName: Decomressing Terraform Plan Artifact
 
-  #               - download: current
-  #                 artifact: terraformPlanFile
-  #                 displayName: Download Terraform Plan Artifact
-  #                 condition: eq(variables['tf_config_validated'], '2')
-                
-  #               - script: |
-  #                   ls "$(System.ArtifactsDirectory)"
-  #                 condition: eq(variables['tf_config_validated'], '2')
 
-  #               - task: TerraformInstaller@0
-  #                 displayName: Use latest Terraform
-  #                 inputs:
-  #                   terraformVersion: latest
-  #                 condition: eq(variables['tf_config_validated'], '2')
+              - script: |
+                  cd ../terraform-plan-artifact
+                  echo "Finding Current Terraform build Directory"
+                  terraform_plan_path=$(find . -name terraform.plan -printf '%h\n')
+                  echo $terraform_plan_path
+                  echo "##vso[task.setvariable variable=terraform_plan_path]$terraform_plan_path"
+                displayName: Locate Configuration Path via Terraform plan file
 
-  #               - script: wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.24.0/terragrunt_linux_amd64
-  #                 displayName: Retrieving Terragrunt
-  #                 condition: eq(variables['tf_config_validated'], '2')
-
-  #               - script: |
-  #                   chmod +x terragrunt_linux_amd64
-  #                   sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
-  #                 displayName: Ensuring Terragrunt Permissions
-  #                 condition: eq(variables['tf_config_validated'], '2')
-
-  #               - script: |
-  #                   terragrunt apply -auto-approve -target=terraform.plan
-  #                 displayName: Apply Terraform file and build resource
-  #                 condition: eq(variables['tf_config_validated'], '2')
-                
+              - script: |
+                  echo 'Applying Terraform Plan File...'
+                  terraform apply -auto-approve
+                workingDirectory: '../terraform-plan-artifact/$(terraform_plan_path)'
+                displayName: Apply Terraform Configurtion Changes
+                env:
+                  AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+                  AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

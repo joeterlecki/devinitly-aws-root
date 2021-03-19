@@ -10,5 +10,6 @@ inputs = {
   bucket_name       = "devinitly-root-logging"
   versioning_status = "false"
   environment       = "prd"
-  tags              = {Project = "portfolio", Department = "Cloud Engineering"}
+  canned_acl        = "log-delivery-write"
+  tags              = {Project = "portfolio", Department = "Cloud Engineering", Testing = "Demo test"}
 }

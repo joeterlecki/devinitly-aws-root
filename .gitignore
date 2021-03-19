@@ -1,5 +1,7 @@
 .terraform/
+.terraform.lock.hcl
+*.terraform/*
 .idea/
 *tfstate*
 terraform.plan
-
+*.terragrunt-cache*
