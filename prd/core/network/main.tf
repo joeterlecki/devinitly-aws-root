@@ -1,5 +1,6 @@
 module "vpc" {
-  source               = "github.com/terraform-aws-iac/terraform-aws-vpc.git"
+  source  = "app.terraform.io/Devinitly/vpc/aws"
+  version = "1.0.3"
   vpc_cidr_block       = var.vpc_cidr_block
   vpc_name             = var.vpc_name
   environment          = var.environment
